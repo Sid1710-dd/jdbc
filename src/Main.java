@@ -1,100 +1,62 @@
+
 package org.example;
 
 import java.sql.*;
 import java.io.*;
 
 public class Main {
-
-    private static final String URL =
-            "jdbc:mysql://localhost:3306/employee_db";
-
-    private static final String USERNAME = "root";
-    private static final String PASSWORD = "";
-
     public static void main(String[] args) {
 
+        String url = "jdbc:mysql://localhost:3306/employee_db";
+        String username = "root";
+        String password = "siddhesh17";
+
         String sql = "SELECT * FROM employee";
-        String fileName = "employees.csv";
+        String fileName = "C:\\Users\\Dell\\IdeaProjects\\jdbc\\employees.csv";
 
         try (
-                Connection conn = DriverManager.getConnection(
-                        URL, USERNAME, PASSWORD);
+                Connection con = DriverManager.getConnection(
+                        url, username, password);
 
-                PreparedStatement pstmt =
-                        conn.prepareStatement(sql);
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery();
 
-                ResultSet rs = pstmt.executeQuery()
+                BufferedWriter writer = new BufferedWriter(
+                        new FileWriter(fileName))
         ) {
+            System.out.println("Database connected successfully.");
 
-            System.out.println("Database is connected");
+            // Write CSV header
+            writer.write("id,name,department,salary");
+            writer.newLine();
 
-            // Create CSV file and write employee records
-            try (BufferedWriter writer = new BufferedWriter(
-                    new FileWriter(fileName))) {
+            // Read employee records
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                String department = rs.getString("department");
+                double salary = rs.getDouble("salary");
 
-                // Write CSV header
-                writer.write("id,name,department,salary");
+                // Write employee details to CSV
+                writer.write(id + "," + name + ","
+                        + department + "," + salary);
                 writer.newLine();
 
-                boolean found = false;
-
-                // Read records using ResultSet
-                while (rs.next()) {
-
-                    found = true;
-
-                    int id = rs.getInt("id");
-                    String name = rs.getString("name");
-                    String department = rs.getString("department");
-                    double salary = rs.getDouble("salary");
-
-                    // Write records into CSV
-                    writer.write(
-                            id + "," +
-                                    escapeCSV(name) + "," +
-                                    escapeCSV(department) + "," +
-                                    salary
-                    );
-
-                    writer.newLine();
-
-                    System.out.println(
-                            id + " | " + name + " | " +
-                                    department + " | " + salary
-                    );
-                }
-
-                if (!found) {
-                    System.out.println("No employee records found.");
-                }
-
-                System.out.println(
-                        "Employee records exported successfully!");
-
-                System.out.println(
-                        "CSV file location: " +
-                                new File(fileName).getAbsolutePath()
-                );
-
-            } catch (IOException e) {
-                System.out.println("Error writing CSV file!");
-                e.printStackTrace();
+                System.out.println(id + " " + name + " "
+                        + department + " " + salary);
             }
 
-        } catch (SQLException e) {
+            System.out.println("Employee records exported successfully.");
+            System.out.println("File location: "
+                    + new File(fileName).getAbsolutePath());
 
-            System.out.println("Database error occurred!");
+        } catch (SQLException e) {
+            System.out.println("Database error occurred.");
+            e.printStackTrace();
+
+        } catch (IOException e) {
+            System.out.println("Error writing CSV file.");
             e.printStackTrace();
         }
-    }
-
-    // Handle commas and quotation marks in CSV fields
-    private static String escapeCSV(String value) {
-
-        if (value == null) {
-            return "";
-        }
-
-        return "\"" + value.replace("\"", "\"\"") + "\"";
     }
 }
